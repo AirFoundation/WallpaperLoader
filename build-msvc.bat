@@ -28,18 +28,22 @@ if not exist "%JAVA_HOME%\include\jni.h" (
 
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" (
-  echo [ERROR] vswhere.exe not found. Install VS 2022 Build Tools with the
-  echo         "Desktop development with C++" workload.
+  echo [ERROR] vswhere.exe not found. Install VS 2022 Build Tools with
+  echo         the C++ desktop workload.
   exit /b 1
 )
 
-for /f "usebackq tokens=*" %%i in (
-  `"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`
-) do set "VSINSTALL=%%i"
+rem NOTE: do NOT use for /f with %VSWHERE% here - the parentheses in
+rem "Program Files (x86)" would prematurely close the for block. Use a temp file.
+"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath > "%TEMP%\wl_vsinstall.txt" 2>nul
+set "VSINSTALL="
+set /p VSINSTALL=<"%TEMP%\wl_vsinstall.txt"
+del "%TEMP%\wl_vsinstall.txt" 2>nul
 if not defined VSINSTALL (
   echo [ERROR] No VS installation with the C++ x64 toolset found.
   exit /b 1
 )
+echo [INFO] VS: %VSINSTALL%
 
 call "%VSINSTALL%\VC\Auxiliary\Build\vcvarsall.bat" x64 || exit /b 1
 
