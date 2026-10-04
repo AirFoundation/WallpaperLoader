@@ -1,7 +1,8 @@
 @echo off
 rem Build WallpaperLoader.dll (x64). English-only to avoid cmd codepage issues.
-rem Prerequisites: VS 2022 Build Tools (C++ desktop workload + Windows SDK),
+rem Prerequisites: Visual Studio 2022 (or Build Tools) with C++ workload,
 rem                CMake, JDK 17+, JAVA_HOME pointing at a JDK.
+rem CMake auto-detects Visual Studio; no manual vcvarsall needed.
 setlocal
 
 where cmake >nul 2>nul
@@ -26,29 +27,20 @@ if not exist "%JAVA_HOME%\include\jni.h" (
   exit /b 1
 )
 
-set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
-if not exist "%VSWHERE%" (
-  echo [ERROR] vswhere.exe not found. Install VS 2022 Build Tools with
-  echo         the C++ desktop workload.
+cmake -S "%~dp0" -B "%~dp0build" -A x64
+if errorlevel 1 (
+  echo [ERROR] CMake configure failed. Most likely causes:
+  echo         - No Visual Studio with C++ workload installed
+  echo           (install VS 2022 Build Tools + "Desktop development with C++")
+  echo         - No JDK found via JAVA_HOME
   exit /b 1
 )
 
-rem NOTE: do NOT use for /f with %VSWHERE% here - the parentheses in
-rem "Program Files (x86)" would prematurely close the for block. Use a temp file.
-"%VSWHERE%" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath > "%TEMP%\wl_vsinstall.txt" 2>nul
-set "VSINSTALL="
-set /p VSINSTALL=<"%TEMP%\wl_vsinstall.txt"
-del "%TEMP%\wl_vsinstall.txt" 2>nul
-if not defined VSINSTALL (
-  echo [ERROR] No VS installation with the C++ x64 toolset found.
+cmake --build "%~dp0build" --config Release
+if errorlevel 1 (
+  echo [ERROR] Build failed. Paste the full output for help.
   exit /b 1
 )
-echo [INFO] VS: %VSINSTALL%
-
-call "%VSINSTALL%\VC\Auxiliary\Build\vcvarsall.bat" x64 || exit /b 1
-
-cmake -S "%~dp0" -B "%~dp0build" -A x64 || exit /b 1
-cmake --build "%~dp0build" --config Release || exit /b 1
 
 echo.
 echo [DONE] %~dp0build\Release\WallpaperLoader.dll
