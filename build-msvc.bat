@@ -2,6 +2,7 @@
 rem 一键构建 WallpaperLoader.dll (x64)
 rem 前置: Visual Studio 2022 Build Tools (含 C++ 桌面开发 + Windows SDK),
 rem       CMake, JDK 17+, 并设置 JAVA_HOME 环境变量。
+chcp 65001 >nul
 setlocal
 
 where cmake >nul 2>nul || (echo [错误] 未找到 cmake, 请先安装 & exit /b 1)
